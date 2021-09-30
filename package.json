@@ -1,0 +1,15 @@
+{
+  "name": "cors-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "corsProxy.js",
+  "scripts": {
+    "start": "node corsProxy.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "request": "^2.88.2"
+  }
+}
