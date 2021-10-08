@@ -9,7 +9,7 @@ const proxyListeningPath = "/api/*"; // "*" will listen for everything and send 
 const proxyDefaultPort = 3001; // This proxys listening port
 const apiTimeout = 60000; // Number of milliseconds to wait for API responses
 const allowCredentials = true; // Needed if credentials are used on site
-const allowHeaders = ["x-xsrf-token", "x-requested-with"]; // The headers that is allowed through
+const allowHeaders = ["x-xsrf-token", "x-requested-with", "content-type"]; // The headers that is allowed through
 /* ----------------------- */
 
 app.use((req, res, next) => {
@@ -21,18 +21,51 @@ app.use((req, res, next) => {
   next();
 });
 
+// Listen for GET requests for relevant paths
 app.get(proxyListeningPath, (req, res) => {
-  // Listen for requests for relevant paths
-
   request(
     { url: `${apiOrigin}/${req.path}`, timeout: apiTimeout },
     (error, response, body) => {
       if (error || response.statusCode !== 200) {
-        console.error(`Could not handle ${req.path}. Error: ${error}`);
-        return res.status(500).json({ type: "error", message: error });
+        console.error(
+          `Could not handle ${req.path}. Message: ${response.statusMessage}.\nBody: ${body}.`
+        );
+
+        return res.status(response.statusCode).json({
+          type: "GET",
+          message: response.statusMessage,
+          body: JSON.parse(body),
+        });
       }
 
-      console.log(`Handling ${req.path}`);
+      console.log(`GET ${req.path}`);
+
+      res.json(JSON.parse(body));
+    }
+  );
+});
+
+// Listen for POST requests for relevant paths
+app.post(proxyListeningPath, (req, res) => {
+  request(
+    {
+      url: `${apiOrigin}/${req.path}`,
+      timeout: apiTimeout,
+    },
+    (error, response, body) => {
+      if (error || response.statusCode !== 200) {
+        console.error(
+          `Could not handle ${req.path}. Message: ${response.statusMessage}.\nBody: ${body}.`
+        );
+
+        return res.status(response.statusCode).json({
+          type: "POST",
+          message: response.statusMessage,
+          body: JSON.parse(body),
+        });
+      }
+
+      console.log(`POST ${req.path}`);
 
       res.json(JSON.parse(body));
     }
