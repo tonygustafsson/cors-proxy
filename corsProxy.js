@@ -28,13 +28,15 @@ app.get(proxyListeningPath, (req, res) => {
     (error, response, body) => {
       if (error || response.statusCode !== 200) {
         console.error(
-          `Could not handle ${req.path}. Message: ${response.statusMessage}.\nBody: ${body}.`
+          `Could not handle ${req.path}. Message: ${
+            response.statusMessage
+          }.\nBody: ${body || "Empty"}.`
         );
 
         return res.status(response.statusCode).json({
           type: "GET",
           message: response.statusMessage,
-          body: JSON.parse(body),
+          body: body ? JSON.parse(body) : null,
         });
       }
 
@@ -50,6 +52,7 @@ app.post(proxyListeningPath, (req, res) => {
   request(
     {
       url: `${apiOrigin}/${req.path}`,
+      body: res.body,
       timeout: apiTimeout,
     },
     (error, response, body) => {
