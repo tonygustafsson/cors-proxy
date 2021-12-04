@@ -1,31 +1,25 @@
-import { isJsonString } from "./utils.js";
 import express from "express";
 import request from "request";
+import dotenv from "dotenv";
+import { isJsonString, getSettings } from "./utils.js";
 
+dotenv.config();
+const settings = getSettings();
 const app = express();
 
-/* ------ SETTINGS ------ */
-const apiOrigin = "https://api.myserver.com"; // The actual API Protocol + domain
-const proxyListeningPath = "/api/*"; // "*" will listen for everything and send it to apiOrigin
-const proxyDefaultPort = 3001; // This proxys listening port
-const apiTimeout = 60000; // Number of milliseconds to wait for API responses
-const allowCredentials = true; // Needed if credentials are used on site
-const allowHeaders = ["x-xsrf-token", "x-requested-with", "content-type"]; // The headers that is allowed through
-/* ----------------------- */
-
+// Set necessary headers for all requests
 app.use((req, res, next) => {
-  // Set necessary headers for all requests
   res.header("Access-Control-Allow-Origin", req.get("origin"));
-  res.header("Access-Control-Allow-Credentials", allowCredentials);
-  res.header("Access-Control-Allow-Headers", allowHeaders.join(","));
+  res.header("Access-Control-Allow-Credentials", settings.allowCredentials);
+  res.header("Access-Control-Allow-Headers", settings.allowHeaders);
 
   next();
 });
 
 // Listen for GET requests for relevant paths
-app.get(proxyListeningPath, (req, res) => {
+app.get(settings.proxyListeningPath, (req, res) => {
   request(
-    { url: `${apiOrigin}/${req.path}`, timeout: apiTimeout },
+    { url: `${settings.apiOrigin}/${req.path}`, timeout: settings.apiTimeout },
     (error, response, body) => {
       if (error || response.statusCode !== 200) {
         console.error(
@@ -43,11 +37,10 @@ app.get(proxyListeningPath, (req, res) => {
 
       if (isJsonString(body)) {
         const newBody = body.replaceAll(
-          `${apiOrigin}${proxyListeningPath.slice(0, -2)}`,
-          `http://localhost:${proxyDefaultPort}${proxyListeningPath.slice(
-            0,
-            -2
-          )}`
+          `${settings.apiOrigin}${settings.proxyListeningPath.slice(0, -2)}`,
+          `http://localhost:${
+            settings.proxyDefaultPort
+          }${settings.proxyListeningPath.slice(0, -2)}`
         );
 
         res.json(JSON.parse(newBody));
@@ -59,12 +52,12 @@ app.get(proxyListeningPath, (req, res) => {
 });
 
 // Listen for POST requests for relevant paths
-app.post(proxyListeningPath, (req, res) => {
+app.post(settings.proxyListeningPath, (req, res) => {
   request(
     {
-      url: `${apiOrigin}/${req.path}`,
+      url: `${settings.apiOrigin}/${req.path}`,
       body: res.body,
-      timeout: apiTimeout,
+      timeout: settings.apiTimeout,
     },
     (error, response, body) => {
       if (error || response.statusCode !== 200) {
@@ -86,5 +79,14 @@ app.post(proxyListeningPath, (req, res) => {
   );
 });
 
-const PORT = process.env.PORT || proxyDefaultPort;
-app.listen(PORT, () => console.log(`CORS Proxy listening on ${PORT}`));
+// Start listener
+const PORT = process.env.PORT || settings.proxyDefaultPort;
+app.listen(PORT, () =>
+  console.log(
+    `CORS Proxy listening on ${PORT}\nSettings: ${JSON.stringify(
+      settings,
+      null,
+      2
+    )}`
+  )
+);

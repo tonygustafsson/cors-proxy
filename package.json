@@ -2,14 +2,15 @@
   "name": "cors-proxy",
   "version": "1.0.0",
   "description": "",
-  "main": "corsProxy.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node corsProxy.js"
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "request": "^2.88.2"
   }
