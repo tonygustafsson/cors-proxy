@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "corsProxy.js",
+  "type": "module",
   "scripts": {
     "start": "node corsProxy.js"
   },

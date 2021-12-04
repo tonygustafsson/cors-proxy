@@ -1,5 +1,6 @@
-const express = require("express");
-const request = require("request");
+import { isJsonString } from "./utils.js";
+import express from "express";
+import request from "request";
 
 const app = express();
 
@@ -40,9 +41,19 @@ app.get(proxyListeningPath, (req, res) => {
         });
       }
 
-      console.log(`GET ${req.path}`);
+      if (isJsonString(body)) {
+        const newBody = body.replaceAll(
+          `${apiOrigin}${proxyListeningPath.slice(0, -2)}`,
+          `http://localhost:${proxyDefaultPort}${proxyListeningPath.slice(
+            0,
+            -2
+          )}`
+        );
 
-      res.json(JSON.parse(body));
+        res.json(JSON.parse(newBody));
+      } else {
+        res.send(body);
+      }
     }
   );
 });
