@@ -1,12 +1,3 @@
-export const isJsonString = (str) => {
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    return false;
-  }
-  return true;
-};
-
 export const getSettings = () => {
   return {
     apiOrigin: process.env.API_ORIGIN,

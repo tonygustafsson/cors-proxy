@@ -1,7 +1,7 @@
 import express from "express";
 import request from "request";
 import dotenv from "dotenv";
-import { isJsonString, getSettings } from "./utils.js";
+import { getSettings } from "./utils.js";
 
 dotenv.config();
 const settings = getSettings();
@@ -18,24 +18,29 @@ app.use((req, res, next) => {
 
 // Listen for GET requests for relevant paths
 app.get(settings.proxyListeningPath, (req, res) => {
-  request(
-    { url: `${settings.apiOrigin}/${req.path}`, timeout: settings.apiTimeout },
-    (error, response, body) => {
-      if (error || response.statusCode !== 200) {
-        console.error(
-          `Could not handle ${req.path}. Message: ${
-            response.statusMessage
-          }.\nBody: ${body || "Empty"}.`
-        );
+  const type = req.headers["accept"].split(",")[0];
 
-        return res.status(response.statusCode).json({
-          type: "GET",
-          message: response.statusMessage,
-          body: body ? JSON.parse(body) : null,
-        });
-      }
+  if (type === "application/json") {
+    request(
+      {
+        url: `${settings.apiOrigin}/${req.path}`,
+        timeout: settings.apiTimeout,
+      },
+      (error, response, body) => {
+        if (error || response.statusCode !== 200) {
+          console.error(
+            `Could not handle ${req.path}. Message: ${
+              response.statusMessage
+            }.\nBody: ${body || "Empty"}.`
+          );
 
-      if (isJsonString(body)) {
+          return res.status(response.statusCode).json({
+            type: "GET",
+            message: response.statusMessage,
+            body: body ? JSON.parse(body) : null,
+          });
+        }
+
         const newBody = body.replaceAll(
           `${settings.apiOrigin}${settings.proxyListeningPath.slice(0, -2)}`,
           `http://localhost:${
@@ -44,11 +49,15 @@ app.get(settings.proxyListeningPath, (req, res) => {
         );
 
         res.json(JSON.parse(newBody));
-      } else {
-        res.send(body);
       }
-    }
-  );
+    );
+  } else {
+    // Not JSON request, deliver as is
+    request({
+      url: `${settings.apiOrigin}/${req.path}`,
+      timeout: settings.apiTimeout,
+    }).pipe(res);
+  }
 });
 
 // Listen for POST requests for relevant paths
